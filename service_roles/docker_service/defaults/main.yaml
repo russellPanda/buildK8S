@@ -1,0 +1,15 @@
+insecure_registries: ["dcr.io:5000", "registry.com:5000"]
+ip_mod_version: ipv4
+docker_default_network: "172.32.0.1/16"
+docker_ipv6_default_network: "2001:470:19:fea::/64"
+docker_config_dir: "/etc/docker"
+
+_os_ansible_distribution:
+ Kylin Linux Advanced Server: Kylin
+
+os_distribution: >-
+  {%- if ansible_distribution in _os_ansible_distribution -%}
+  {{ _os_ansible_distribution[ansible_distribution] }}
+  {%- else -%}
+  {{ ansible_distribution }}
+  {%- endif -%}
