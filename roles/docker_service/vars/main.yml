@@ -6,3 +6,7 @@ ip_mod_version:
 docker_default_network:
 docker_ipv6_default_network:
 os_distribution:
+docker_config_dir:
+yum_repo:
+runc_version:
+host_architecture:
