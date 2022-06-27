@@ -1,0 +1,14 @@
+---
+- name: install docker-ce
+  yum: name=docker-ce state=latest
+  when: os_distribution == "CentOS"
+
+- name: install docker
+  yum: name=docker state=latest
+  when: os_distribution == "Kylin"
+
+# - name: create docker_config_dir
+#   file: path={{ docker_config_dir }} state=directory
+
+- name: enable docker
+  service: name=docker enabled=yes state=started

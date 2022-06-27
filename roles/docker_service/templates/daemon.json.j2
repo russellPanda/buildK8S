@@ -10,16 +10,5 @@
   "ipv6": true,
   "fixed-cidr-v6": "{{ docker_ipv6_default_network }}",
   {%- endif %}
-  {% if kube_beyondvm_enable | bool -%}
-  "default-runtime": "richrunc",
-  "runtimes": {
-    "richrunc": {
-      "path": "/root/runc"
-    }},
-  {%- endif %}
-  {% if os_distribution == "Kylin" -%}
-  "exec-opts": ["native.cgroupdriver=cgroupfs"]
-  {% else %}
   "exec-opts": ["native.cgroupdriver=systemd"]
-  {% endif %}
 }

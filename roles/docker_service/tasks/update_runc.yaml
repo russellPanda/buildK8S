@@ -1,0 +1,9 @@
+---
+- name: backup runc
+  shell: "cp /usr/bin/runc{,.bak}"
+
+- name: install runc
+  get_url: url="{{ yum_repo }}/files/runc-{{ runc_version }}-{{ host_architecture }}" dest="/usr/bin/runc" mode=0755
+
+- name: restart docker after update runc
+  systemd: name=docker state=restarted enabled=yes daemon_reload=yes
