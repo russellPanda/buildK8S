@@ -1,0 +1,29 @@
+---
+- block:
+  - name: stopped ntp service
+    systemd:
+      name: ntp
+      enabled: no
+      state: stopped
+    ignore_errors: true
+      
+  - name: install chrony
+    yum: 
+      name: chrony 
+      state: present
+
+
+- name: create chrony config file
+  template: 
+    src: chrony.conf.j2 
+    dest: /etc/chrony.conf 
+    mode: 0755
+
+- name: start and enable chrony
+  systemd:
+    name: chrony
+    enabled: yes
+    state: started
+
+- name: command for sync datetime
+  shell: "chronyc sources"
