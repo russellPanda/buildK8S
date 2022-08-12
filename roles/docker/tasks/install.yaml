@@ -1,0 +1,14 @@
+---
+# tasks file for docker
+
+- name: install docker-ce
+  yum:
+    name: docker-ce
+    state: latest
+
+
+- name: enable docker service
+  service:
+    name: docker
+    enabled: yes
+    state: started

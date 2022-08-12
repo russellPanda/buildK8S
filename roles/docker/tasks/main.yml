@@ -1,12 +1,16 @@
 ---
-- name: check docker version on node
+# tasks file for docker
+
+- name: check docker service install
   shell: "docker info &> /dev/null"
   register: is_install
   ignore_errors: true
 
 - name: install docker
   include_tasks: install.yaml
-  when: is_install.rc !=0
-
+  when: is_install.rc != 0
+  
 - name: create docker config
-  include_tasks: config_arm.yaml
+  include_tasks: config.yaml
+
+

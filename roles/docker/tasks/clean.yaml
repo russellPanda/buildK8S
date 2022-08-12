@@ -1,0 +1,30 @@
+---
+- block:
+
+  - name: disable docker service
+    service:
+      name: docker
+      enabled: no
+      state: stopped
+
+  - name: remove docker-ce
+    yum:
+      name: docker-ce
+      state: absent
+
+  - name: daemon-reload
+    command: "systemctl daemon-reload"
+
+  - name: umount kubelet pod tmpfs
+    shell: "for i in $(cat /proc/mounts | grep docker | awk '{print $2}');do umount $i;done"
+
+  - name: clean file and directory
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - "{{ docker_config_dir }}"
+      - "/var/lib/dockershim"
+      - "/var/lib/docker"
+      - "/var/run/docker"
+  ignore_errors: true

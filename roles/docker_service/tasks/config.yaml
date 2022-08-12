@@ -1,7 +1,0 @@
----
-- name: create docker daemon.json
-  template: src="daemon.json.j2" dest={{ docker_config_dir }}/daemon.json
-  # ignore_errors: True
-
-- name: restart docker when config is changed
-  systemd: name=docker state=restarted enabled=yes daemon_reload=yes
