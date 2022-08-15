@@ -1,0 +1,34 @@
+---
+- name: create kube addon directory
+  file:
+    name: "{{ kube_addon_dir }}"
+    state: directory
+    mode: 0755
+
+- name: create etcd addon directory
+  file:
+    name: "{{ kube_addon_dir }}/kube_etcd"
+    state: directory
+    mode: 0755
+
+- name: create etcd service yaml
+  copy: 
+    src: "kube_etcd_service.yaml"
+    dest: "{{ kube_addon_dir }}/kube_etcd/kube_etcd_service.yaml"
+    mode: 0755
+  
+- bloc:
+  - name: kubectl create etcd service
+    shell: "kubectl apply -f {{ kube_addon_dir }}/kube_etcd/kube_etcd_service.yaml"
+    register: result
+    until: result.rc == 0
+    retries: "{{ retries }}"
+    delay: "{{ delay }}"
+
+  - name: check etcd service
+    shell: "kubectl get svc --all-namespaces | grep kube-etcd"
+    register: result
+    until: result.rc == 0
+    retries: "{{ retries }}"
+    delay: "{{ delay }}"
+  run_once: true

@@ -1,2 +1,6 @@
 ---
 # tasks file for etcd_service
+
+- name: deploy etcd cluster
+  include_tasks: install.yaml
+  # when: inventory_hostname in (groups['etcd'] |default([]))

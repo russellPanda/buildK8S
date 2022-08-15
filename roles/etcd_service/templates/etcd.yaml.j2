@@ -1,0 +1,68 @@
+---
+{% macro initial_cluster_for_ipv4() -%}
+{% for host in groups['etcd'] -%}
+  {{ hostvars[host].node_hostname }}=https://{{ host }}:2380
+  {%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+{% endmacro -%}
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    component: etcd
+    tier: control-plane
+  name: etcd
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - etcd
+    - --listen-client-urls=https://127.0.0.1:2379,https://{{ inventory_hostname }}:2379
+    - --advertise-client-urls=https://{{ inventory_hostname }}:2379
+    - --listen-peer-urls=https://{{ inventory_hostname }}:2380
+    - --initial-advertise-peer-urls=https://{{ inventory_hostname }}:2380
+    - --listen-metrics-urls=http://0.0.0.0:2381
+    - --initial-cluster={{ initial_cluster_for_ipv4() }}
+    - --initial-cluster-token={{ etcd_initial_cluster_token }}
+    - --cert-file={{ etcd_cert_dir }}/server.pem
+    - --client-cert-auth=true
+    - --data-dir={{ etcd_data_dir }}
+    - --key-file={{ etcd_cert_dir }}/server-key.pem
+    - --name={{ node_hostname }}
+    - --peer-cert-file={{ etcd_cert_dir }}/peer.pem
+    - --peer-client-cert-auth=true
+    - --peer-key-file={{ etcd_cert_dir }}/peer-key.pem
+    - --peer-trusted-ca-file={{ etcd_cert_dir }}/ca.pem
+    - --trusted-ca-file={{ etcd_cert_dir }}/ca.pem
+    - --auto-compaction-retention=1
+    image: {{ etcd_image }}:{{ etcd_image_tag }}
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /health
+        port: 2381
+        scheme: HTTP
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    name: etcd
+    resources: {}
+    volumeMounts:
+    - mountPath: {{ etcd_data_dir }}
+      name: etcd-data
+    - mountPath: {{ etcd_cert_dir }}
+      name: etcd-certs
+  hostNetwork: true
+  priorityClassName: system-cluster-critical
+  volumes:
+  - hostPath:
+      path: {{ etcd_cert_dir }}
+      type: DirectoryOrCreate
+    name: etcd-certs
+  - hostPath:
+      path: {{ etcd_data_dir }}
+      type: DirectoryOrCreate
+    name: etcd-data
+status: {}

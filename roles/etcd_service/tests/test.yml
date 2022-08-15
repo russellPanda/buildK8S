@@ -1,5 +1,23 @@
 ---
-- hosts: localhost
-  remote_user: root
+- name: case1-deploy-etcd-one
+  hosts: test
+  become: true
+  gather_facts: no
   roles:
     - etcd_service
+
+- name: case2-deploy-etcd-three
+  hosts: test-three
+  become: true
+  gather_facts: no
+  roles:
+    - etcd_service
+
+- name: case3-backup-etcd-data
+  hosts: test-three
+  become: true
+  gather_facts: no  
+  tasks:
+    - name: backup
+      include_role: name=etcd_service tasks_from=backup.yaml
+
