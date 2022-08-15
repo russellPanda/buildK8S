@@ -1,0 +1,66 @@
+---
+- name: create kube config directory
+  file:
+    name: "{{ kube_config_dir }}"
+    state: directory
+    mode: 0755
+
+- name: create kubeconfig file
+  template:
+    src: "kubeletconfig.j2"
+    dest: "{{ kube_config_dir }}/kubeconfig"
+  vars:
+    host_ip: "127.0.0.1"
+    host_port: "{{ apiserver_src_port }}"
+  
+- name: start kubelet service
+  include_tasks: install_kubelet.yaml
+
+# todo 分发证书, 配置权限
+
+- name: create admin.conf
+  template:
+    src: "admin.conf.j2"
+    dest: "{{ kube_config_dir }}/admin.conf"
+    mode: 0644
+
+- name: create config for kubectl
+  file:
+    path: "{{ item }}/.kube"
+    state: directory
+    mode: 0755
+  become_method: sudo
+  with_items:
+    - "{{ ansible_env.HOME }}"
+    - "/root"
+
+- name: copy admin.conf to ~/.kube/config
+  shell: "/usr/bin/cp -f {{ kube_config_dir }}/admin.conf {{ item }}/.kube/config"
+  become_method: sudo
+  with_items:
+    - "{{ ansible_env.HOME }}"
+    - "/root"
+
+# create manifest yaml
+- name: create audit-policy file
+  copy: 
+    src: "audit-policy.yaml"
+    dest: "{{ kube_config_dir }}/audit-policy.yaml"
+
+- name: create kube-apiserver manifest yaml
+  template: 
+    src: "kube-apiserver.yaml.j2" 
+    dest: "{{ manifest_dir }}/kube-apiserver.yaml"
+    mode: 0644
+
+- name: create kube-controller-manager manifest yaml
+  template: 
+    src: "kube-controller-manager.yaml.j2" 
+    dest: "{{ manifest_dir }}/kube-controller-manager.yaml"
+    mode: 0644
+
+- name: create kube-scheduler manifest yaml
+  template: 
+    src: "kube-scheduler.yaml.j2"
+    dest: "{{ manifest_dir }}/kube-scheduler.yaml"
+    mode: 0644

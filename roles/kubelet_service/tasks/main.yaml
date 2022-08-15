@@ -1,0 +1,10 @@
+---
+# tasks file for kubelet_service
+
+- name: deploy k8s master node
+  include_tasks: master_node.yaml
+  when: inventory_hostname in (groups['kubernetes_master']| default([]))
+
+- name: deploy k8s worker node
+  include_tasks: worker_node.yaml
+  when: inventory_hostname in (groups['kubernetes_worker']| default([]))  
