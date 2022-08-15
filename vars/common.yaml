@@ -1,0 +1,7 @@
+
+
+
+# docker service
+docker_config_dir: "/etc/docker"
+insecure_registries: '{{ INSECURE_REGISTRIES | default(["dcr.io:5000","abcsys.cn:5000","registry01.com:5000", "registry.com:5000"]) }}'
+ip_mod_version: "ipv4"

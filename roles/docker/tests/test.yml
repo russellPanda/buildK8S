@@ -1,0 +1,15 @@
+---
+# - hosts: case1-main
+#   become: true
+#   gather_facts: no
+#   roles:
+#     - docker
+
+- name: case2-clean
+  hosts: test
+  become: true
+  gather_facts: no
+  tasks:
+    - name: uninstall docker
+      include_role: name=docker tasks_from=clean.yaml
+

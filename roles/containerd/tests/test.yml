@@ -1,0 +1,16 @@
+---
+- name: case1-main
+  hosts: test
+  become: true
+  gather_facts: no
+  roles:
+    - containerd
+
+- name: case2-clean
+  hosts: test
+  become: true
+  gather_facts: no
+  tasks:
+    - name: uninstall containerd
+      include_role: name=containerd tasks_from=clean.yaml
+

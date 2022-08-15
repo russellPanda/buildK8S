@@ -1,0 +1,66 @@
+---
+- name: install runc
+  block:
+  - name: install dependency package libseccomp for runc
+    yum: 
+      name: libseccomp
+      state: latest
+    
+  - name: download runc file
+    get_url: 
+      url: "{{ yum_repo }}/files/runc-{{ runc_version }}-{{ host_architecture }}" 
+      dest: "/usr/local/sbin/runc" 
+      mode: 0755
+
+- name: create dirctory
+  file:
+    path: "/etc/containerd"
+    state: directory
+
+- name: download files
+  get_url:
+    url: "{{ yum_repo }}/files/{{ item }}-{{ containerd_version }}-{{ host_architecture }}"
+    dest: "/usr/bin/{{ item }}"
+    mode: 0755
+  with_items:
+    - "containerd"
+    - "containerd-shim"
+    - "containerd-shim-runc-v1"
+    - "containerd-shim-runc-v2"
+    - "ctr"
+
+
+- name: downlaod crictl
+  get_url:
+    url: "{{ yum_repo }}/files/crictl-{{ crictl_version }}-{{ host_architecture }}"
+    dest: /usr/bin/crictl
+    mode: 0755
+
+- name: create crictl config file
+  copy: 
+    src: crictl.yaml 
+    dest: /etc/crictl.yaml
+
+
+- name: download nerdctl
+  get_url: 
+    url: "{{ yum_repo }}/files/nerdctl-{{ nerdctl_version }}-{{ host_architecture }}" 
+    dest: /usr/bin/nerdctl 
+    mode: 0755
+
+- name: creat nerdctl config files
+  template:
+    src: "{{ item.tmpl }}"
+    dest: "{{ item.path }}"
+    mode: 0644
+  with_items:
+    - { tmpl: "config.toml.j2", path : "/etc/containerd/config.toml" }
+    - { tmpl: "containerd.service.j2", path : "/usr/lib/systemd/system/containerd.service" }
+
+- name: start and enable containerd
+  service:
+    name: containerd
+    enabled: yes
+    state: started
+
+

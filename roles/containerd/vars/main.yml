@@ -1,0 +1,11 @@
+---
+# vars file for containerd
+
+kube_pause_image: "deploy.bocloud.k8s:40443/kubernetes/pause"
+kube_pause_image_tag: "3.2"
+yum_repo: "http://deploy.bocloud.k8s:40080/"
+runc_version: "1.0.0-rc95"
+containerd_version: "1.6.0"
+nerdctl_version: "0.12.1"
+crictl_version: "v1.21.0"
+host_architecture: "amd64"
