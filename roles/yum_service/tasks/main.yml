@@ -1,2 +1,30 @@
 ---
 # tasks file for yum_service
+- name: create repo directory
+  file:
+    path: "{{ yum_repo_bak_path }}"
+    state: directory
+    mode: 0755
+
+- name: backup repo file if exists
+  shell: mv *.repo repo.bak
+  args:
+    chdir: /etc/yum.repos.d
+  ignore_errors: true
+
+# ansible_distribution_major_version os_version
+- name: create project repo
+  yum_repository:
+    name: "{{ repo_name }}"
+    description: yum repo
+    file: "{{ repo_name }}"
+    baseurl: "{{ yum_repo }}/{{ os_distribution }}/{{ os_version }}/{{ host_architecture }}"
+    enabled: yes
+    gpgcheck: 0
+
+- name: set yum.conf
+  lineinfile: path="/etc/yum.conf" regexp='^plugins=1' line="plugins=0"
+
+- name: yum clean cache
+  shell: "yum clean all"
+  ignore_errors: true

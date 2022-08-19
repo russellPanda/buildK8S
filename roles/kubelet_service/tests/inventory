@@ -1,2 +1,3 @@
-localhost
+[test]
+192.168.2.222 ansible_ssh_pass="Beyond#11" ansible_user="root" ansible_ssh_port=22
 

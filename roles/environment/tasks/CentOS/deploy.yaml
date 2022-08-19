@@ -1,0 +1,45 @@
+---
+- name: hostname
+  shell: hostname
+  register: node_hostname_cmd
+
+- name: register hostname
+  set_fact:
+    node_hostname: "{{ node_hostname_cmd.stdout }}"
+# todo: 更新/写入 /etc/host文件
+
+# network
+- block:
+    - name: set forward accept
+      shell: "iptables -p {{ item }}"
+      with_items:
+        - "INPUT ACCEPT" # 开放接入端
+        - "OUTPUT ACCEPT" # 开放输出端
+        - "FORWARD ACCEPT" # 开放中转端
+
+# kernel module
+- block:
+    - name: modprobe system module
+      shell: "modprobe {{ item }}"
+      with_items:
+        - "ip_vs"
+        - "ip_vs_rr"
+        - "ip_vs_wrr"
+        - "ip_vs_sh"
+        - "fuse"
+        - "rbd"
+
+    - name: create module files
+      copy:
+        src: "system.modules"
+        dest: "/etc/sysconfig/modules/ip_vs.modules"
+        owner: "root"
+        group: "root"
+        mode: 0755
+# todo: yum repo
+
+# todo: registry
+
+#todo: docker
+
+#todo: create ssh key and distribute ssh key

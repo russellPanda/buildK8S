@@ -1,3 +1,0 @@
----
-ntp_enable: true
-ntp_servers: ["192.168.2.221"]
