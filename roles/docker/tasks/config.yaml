@@ -5,11 +5,7 @@
     state: directory
 
 - name: create docker daemon.json
-  template: # src="daemon.json.j2" dest={{ docker_config_dir }}/daemon.json
+  template:
     src: "daemon.json.j2"
     dest: "{{ docker_config_dir }}/daemon.json"
   notify: restart docker service
-
-
-
-  
