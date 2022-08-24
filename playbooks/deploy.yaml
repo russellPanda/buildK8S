@@ -1,18 +1,27 @@
 ---
+- name: gather_facts
+  max_fail_percentage: 0
+  hosts: all:127.0.0.1
+  tasks:
+    - name: check all hosts are reacheable
+      assert:
+        that:
+          - ansible_play_hosts == (groups['all'] + ['127.0.0.1'])
+        fail_msg: 1 or more host is UNREACHABLE
+        success_msg: ALL hosts are REACHABLE
+      run_once: yes
+    - include_vars:
+        file: vars/common_vars.yaml
+    - include_vars:
+        file: vars/vars_for_image.yaml
+    - set_fact:
+        action: deploy
 
-- name: install docker-ce
-  yum: 
-    name: docker-ce
-    state: latest
-  
-
-- name: create docker config directory
-  file:
-    path: "{{ docker_config_dir }}"
-    state: directory
-  
-- name: enable docker service
-  service:
-    name: docker
-    enabled: yes
-    state: started
+- name: deploy
+  hosts: nodes
+  max_fail_percentage: 0
+  become: true
+  gather_facts: no
+  tasks:
+    - name: environment
+      include_role: name=environment
