@@ -23,5 +23,15 @@
   become: true
   gather_facts: no
   tasks:
-    - name: environment
-      include_role: name=environment
+    - name: prepare for deploy k8s
+      include_role:
+        name: environment
+
+    - name: distribution of certificate
+      include_role:
+        name: tools
+        tasks_from: create_distribution_cert.yaml
+
+    - name: deploy k8s node
+      include_role:
+        name: kubelet_service
