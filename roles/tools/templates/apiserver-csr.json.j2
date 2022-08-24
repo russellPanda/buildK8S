@@ -1,0 +1,29 @@
+{
+  "CN": "{{ users["apiserver"]["name"] }}",
+  "hosts": [
+{% for host in groups['kubernetes_master'] %}
+    "{{ host }}",
+{% endfor %}
+    "{{ kubernetes_service_ip }}",
+    "master.bocloud.com",
+    "127.0.0.1",
+    "kubernetes",
+    "kubernetes.default",
+    "kubernetes.default.svc",
+    "kubernetes.default.svc.cluster",
+    "kubernetes.default.svc.cluster.local"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "SuZhou",
+      "L": "XS",
+      "O": "{{ users["apiserver"]["group"] }}",
+      "OU": "System"
+    }
+  ]
+}
