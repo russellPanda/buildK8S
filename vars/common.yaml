@@ -1,7 +1,55 @@
-
-
-
-# docker service
+# docker
 docker_config_dir: "/etc/docker"
-insecure_registries: '{{ INSECURE_REGISTRIES | default(["dcr.io:5000","abcsys.cn:5000","registry01.com:5000", "registry.com:5000"]) }}'
-ip_mod_version: "ipv4"
+insecure_registries: '{{ ["192.168.2.229:40043"]}}'
+ip_mod_version: "ipv4" # ipv6
+docker_default_network: "172.32.0.1/16"
+docker_ipv6_default_network: "2001:470:19:fea::/64"
+
+# os
+os_distribution: "CentOS"
+os_version: "7"
+host_architecture: "amd64"
+
+# ansible task
+retries: 10
+delay: 10
+
+# yum
+yum_repo_bak_path: "/etc/yum.repos.d/repo.bak"
+repo_name: "project"
+yum_repo: "http://deploy.bocloud.k8s:40080/"
+
+# registry
+
+base_image_url: "192.168.2.229:40043"
+
+# kubelet
+manifest_dir: "/etc/kubernetes/manifests"
+kube_addon_dir: "/etc/kubernetes/addon"
+
+# apiserver
+apiserver_dest_port: 6443
+apiserver_src_port: 6443
+
+# etcd
+etcd_image: "{{ base_image_url }}/etcd/etcd"
+etcd_image_tag: "3.4.3"
+
+etcdctl_version: "3.4.3"
+etcd_bin_dir: "/usr/bin"
+etcd_data_dir: "/var/lib/etcd"
+etcd_cert_dir: "/etc/etcd/ssl"
+
+# etcd backup
+etcd_backup_image: "{{ base_image_url }}/etcd/etcd-backup"
+etcd_backup_image_tag: "3.4.3"
+
+# haproxy
+haproxy_config_dir: "/etc/haproxy"
+haproxy_image: "{{ base_image_url }}/haproxy"
+haproxy_image_tag: "2.1.4"
+
+# keepalive
+keepalived_advert_int: 1
+keepalived_config_dir: "/etc/keepalived"
+master_vip: "192.168.2.220"

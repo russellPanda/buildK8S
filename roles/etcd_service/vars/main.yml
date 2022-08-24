@@ -19,3 +19,5 @@ etcd_data_dir: "/var/lib/etcd"
 etcd_cert_dir: "/etc/etcd/ssl"
 etcd_backup_image: "{{ base_image_url }}/etcd/etcd-backup"
 etcd_backup_image_tag: "3.4.3"
+
+base_image_url: "192.168.2.229:40043"

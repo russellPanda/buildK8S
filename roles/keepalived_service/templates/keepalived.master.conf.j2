@@ -21,7 +21,7 @@ vrrp_instance VI_1 {
 {% endif -%}
     interface {{ interface }}
     virtual_router_id {{ keepalived_virtual_router_id }}
-    advert_int {{keepalived_advert_int}}
+    advert_int {{ keepalived_advert_int }}
     authentication {
         auth_type PASS
         auth_pass {{ keepalived_auth_pass }}

@@ -1,9 +1,2 @@
 ---
 # vars file for yum_service
-
-yum_repo_bak_path: "/etc/yum.repos.d/repo.bak"
-repo_name: "project"
-yum_repo: "http://{{ local_hostname }}:{{ yum_port }}/"
-os_distribution: "CentOS"
-os_version: "7"
-host_architecture: "amd64"
