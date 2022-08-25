@@ -1,0 +1,49 @@
+---
+# tasks file for keepalived_service
+- name: create keepalived directory
+  file:
+    name: "{{ keepalived_config_dir }}"
+    state: directory
+    recurse: yes
+
+- name: create kubelet manifest directory
+  file:
+    path: "{{ manifest_dir }}"
+    state: directory
+    recurse: yes
+
+- name: obtaining ip link name
+  shell: ip addr | grep {{ inventory_hostname }} | awk '{print $NF}'
+  register: ctrl_plane
+
+- name: define variables for keepalive config
+  set_fact:
+    keepalived_virtual_router_id: "{{ 255 | random(start=1, seed=role + groups['kubernetes_master'] | first) }}"
+    keepalived_auth_pass: "{{ 1000 | random(seed=role + groups['kubernetes_master'] | first) }}"
+    interface: "{{ ctrl_plane.stdout }}"
+
+- name: creat single node keepalive config variables
+  set_fact:
+    master_keepalived_config_map: "{{ keepalived_config_map|default({}) | combine( {'role':role,'interface': interface,'keepalived_virtual_router_id':keepalived_virtual_router_id,'keepalived_advert_int':keepalived_advert_int,'keepalived_auth_pass':keepalived_auth_pass,'vip':vip} ) }}"
+
+- name: create keepalived config file
+  template:
+    src: "keepalived.master.conf.j2"
+    dest: "{{ keepalived_config_dir }}/keepalived.conf"
+    mode: 0644
+
+- name: create keepalived check script
+  template:
+    src: "check_master.sh.j2"
+    dest: "{{ keepalived_config_dir }}/check_master.sh"
+    mode: 0755
+
+- name: try to restart keepalived service
+  shell: docker restart $(docker ps |grep keepalived | grep -v pause | awk '{print $1}')
+  ignore_errors: true
+
+- name: create keepalive service manifest yaml
+  template:
+    src: "keepalived.yaml.j2"
+    dest: "{{ manifest_dir }}/keepalived.yaml"
+    mode: 0644

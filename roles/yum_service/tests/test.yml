@@ -1,5 +1,7 @@
 ---
-- hosts: localhost
-  remote_user: root
+- name: case1-set-repo
+  hosts: test
+  become: true
+  gather_facts: no
   roles:
     - yum_service

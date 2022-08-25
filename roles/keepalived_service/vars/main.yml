@@ -1,0 +1,8 @@
+---
+# vars file for keepalived_service
+
+keepalived_image: ""
+keepalived_image_tag: ""
+keepalived_config_dir: "/etc/keepalived"
+apiserver_dest_port: ""
+master_vip: "192.168.2.220"
