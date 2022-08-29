@@ -1,0 +1,13 @@
+---
+# todo backup
+# remove duplicate
+
+- name: update /etc/hosts
+  blockinfile:
+    path: "/etc/hosts"
+    content: "{{ lookup('template','etc_hosts.j2') }}"
+    marker: "#{mark} k8s node hosts"
+    state: present
+    backup: yes
+    create: yes
+

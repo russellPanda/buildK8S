@@ -1,0 +1,8 @@
+---
+- name: check all hosts are reacheable
+  assert:
+    that:
+      - ansible_play_hosts == (groups['all'] + ['127.0.0.1'])
+    fail_msg: 1 or more host is UNREACHABLE
+    success_msg: ALL hosts are REACHABLE
+  run_once: yes

@@ -1,7 +1,7 @@
 ---
 # todo user and group
 - name: "{{ ansible_user }} group name"
-  shell: id -ng test
+  shell: id -ng {{ ansible_user }}
   register: user_group
 
 - name: "create ssh directory of {{ ansible_user }}"
@@ -29,15 +29,15 @@
 
 - name: fetch keyfile from remote
   fetch:
-    src: "{{ ansible_env.HOME }}/.ssh/id_rsa"
-    dest: "buffer/{{ansible_hostname}}-id_rsa.pub"
+    src: "{{ ansible_env.HOME }}/.ssh/id_rsa.pub"
+    dest: "buffer/{{ node_hostname }}-id_rsa.pub"
     flat: yes
 
 - name: copy key and add to authorized_keys
   authorized_key:
     user: "{{ ansible_env.USER }}"
     state: present
-    key: "{{ lookup('file','buffer/{{item}}-id_rsa.pub')}}"
-  when: "{{ item != ansible_hostname }}"
-  with_items:
-    - "{{ host_list }}"
+    key: "{{ lookup('file','buffer/{{ node_hostname }}-id_rsa.pub')}}"
+  when:  item != node_hostname
+  with_items: "{{ groups['nodes'] |map('extract',hostvars,'node_hostname')| list }}"
+
