@@ -1,0 +1,7 @@
+{% for item in groups['all'] %}
+{%- if item != 'localhost' %}
+{{ item }}     {{ hostvars[item].node_hostname }}
+{% endif %}
+{% endfor %}
+
+{{ deploy_host }}     deploy.bocloud.k8s

@@ -18,10 +18,27 @@ delay: 10
 yum_repo_bak_path: "/etc/yum.repos.d/repo.bak"
 repo_name: "project"
 yum_repo: "http://deploy.bocloud.k8s:40080/"
+deploy_host: "192.168.2.229"
+
 
 # registry
 
 base_image_url: "192.168.2.229:40043"
+
+# dir
+
+# manifest_dir: "/etc/kubernetes/manifests"
+local_cert_dir: "/opt/.cert"
+kube_config_dir: "/etc/kubernetes"
+# kube_addon_dir: "{{ kube_config_dir}}/addon"
+kube_cert_dir: "{{ kube_config_dir }}/pki"
+
+
+
+# cfssl
+
+cfssl_version: "1.5.0"
+cfssljson_version: "1.5.0"
 
 # kubelet
 manifest_dir: "/etc/kubernetes/manifests"
