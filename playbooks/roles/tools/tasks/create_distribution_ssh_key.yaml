@@ -18,7 +18,7 @@
   with_items:
     - "{{ ansible_env.HOME }}/.ssh/id_rsa"
     - "{{ ansible_env.HOME }}/.ssh/id_rsa.pub"
-  register: key_file
+  register: rsa_stats
 
 # todo 文件存在 即判断密钥完整
 
@@ -26,6 +26,7 @@
   shell: >
     ssh-keygen -t rsa -b 2048 -N "" -C "{{ ansible_env.USER }}@{{ node_hostname }}" -f {{ ansible_env.HOME }}/.ssh/id_rsa
     creates="{{ ansible_env.HOME }}/.ssh/id_rsa"
+  when: false in rsa_stats | json_query('results[*].stat.exists') or rsa_flush | default(false) == true
 
 - name: fetch keyfile from remote
   fetch:
