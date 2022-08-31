@@ -70,3 +70,21 @@ haproxy_image_tag: "2.1.4"
 keepalived_advert_int: 1
 keepalived_config_dir: "/etc/keepalived"
 master_vip: "192.168.2.220"
+
+
+# cert
+
+ca_expiry: "876000h"
+
+
+
+# users
+users: {
+  "apiserver": {"name":"apiserver", "group":"system:masters"},
+  "kube-node": {"name":"system:node", "group":"system:nodes"},
+  "admin": {"name":"admin", "group":"system:masters"}
+}
+
+# kubernetes
+
+kubernetes_service_ip: "100.64.0.1"
