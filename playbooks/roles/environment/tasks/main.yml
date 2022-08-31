@@ -1,2 +1,4 @@
 ---
 # tasks file for environment
+- name: environment act for {{ os_distribution }} {{ action }}
+  include_tasks: "{{ os_distribution }}/{{ action }}.yaml"
