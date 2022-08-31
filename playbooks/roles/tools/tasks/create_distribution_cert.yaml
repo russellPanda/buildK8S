@@ -147,7 +147,6 @@
           when: false in all_results or etcd_flush | default(false) == true
 
         - name: create etcd server certs
-
           shell: "cfssl gencert \
             -ca=ca.pem \
             -ca-key=ca-key.pem \
