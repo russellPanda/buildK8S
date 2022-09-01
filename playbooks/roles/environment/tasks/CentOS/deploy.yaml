@@ -40,6 +40,7 @@
         owner: "root"
         group: "root"
         mode: 0755
+
 # yum repo
 - block:
     - name: create yum repo
@@ -47,24 +48,19 @@
         name: yum_service
 # todo: registry
 
-#todo: docker
-
 - block:
     - name: install docker
       include_role:
         name: docker
-#todo: create ssh key and distribute ssh key
 
 - block:
     - name: create and distribute ssh key
       include_role:
         name: tools
         tasks_from: create_distribution_ssh_key.yaml
-      vars:
-      host_list: "{{ groups['node'] }}"
 
     - name: create and distribute cert files
       include_role:
         name: tools
         tasks_from: create_distribution_cert.yaml
-      when: inventory_hostname in groups['node']
+      # when: inventory_hostname in groups['nodes']
