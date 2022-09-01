@@ -15,7 +15,7 @@
 # network
 - block:
     - name: set forward accept
-      shell: "iptables -p {{ item }}"
+      shell: "iptables -P {{ item }}"
       with_items:
         - "INPUT ACCEPT" # 开放接入端
         - "OUTPUT ACCEPT" # 开放输出端
