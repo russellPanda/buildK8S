@@ -1,0 +1,6 @@
+---
+- name: create kube-controller-manager manifest yaml
+  template: 
+    src: "kube-controller-manager.yaml.j2" 
+    dest: "{{ manifest_dir }}/kube-controller-manager.yaml"
+    mode: 0644

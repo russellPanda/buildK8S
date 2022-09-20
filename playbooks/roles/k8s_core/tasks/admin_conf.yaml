@@ -1,0 +1,20 @@
+---
+- name: create admin.conf
+  template:
+    src: "admin.conf.j2"
+    dest: "{{ kube_config_dir }}/admin.conf"
+    mode: 0644
+
+- name: create kubeconfig for kubectl
+  file: path="{{ item }}/.kube" state=directory mode=0755
+  become_method: sudo
+  with_items:
+  - "{{ ansible_env.HOME }}"
+  - "/root"
+
+- name: copy admin.conf to ~/.kube/config
+  shell: "/usr/bin/cp -f {{ kube_config_dir }}/admin.conf {{ item }}/.kube/config"
+  become_method: sudo
+  with_items:
+  - "{{ ansible_env.HOME }}"
+  - "/root"

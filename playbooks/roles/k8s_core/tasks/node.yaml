@@ -1,0 +1,31 @@
+---
+- name: create directory on kubernetes node
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ kube_config_dir }}"
+    - "{{ manifest_dir }}"
+    - "/var/lib/kubelet"
+
+# kube config
+- name: create kube config
+  include_tasks: kubeconfig.yaml
+
+# kubelet
+- name: install kubelet
+  include_tasks: kubelet.yaml
+
+# certs
+- name: config node certs files
+  include_tasks: cert/node_cert.yaml
+
+# todo install ha and keepalived   for ingress
+
+- name: check cluster is init ok
+  shell: "kubectl get nodes | egrep ^{{ node_hostname }}"
+  register: result
+  until: result.rc == 0
+  retries: "{{ retries }}"
+  delay: "{{ delay }}"
