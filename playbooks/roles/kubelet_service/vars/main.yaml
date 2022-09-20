@@ -1,4 +1,0 @@
----
-# vars file for kubelet_service
-
-kube_config_dir: ""
