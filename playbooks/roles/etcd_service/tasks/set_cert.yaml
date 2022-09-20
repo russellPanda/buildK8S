@@ -1,0 +1,27 @@
+---
+- name: create etcd cert dir
+  file: 
+    path: "{{ etcd_cert_dir }}" 
+    recurse: yes 
+    state: directory 
+    owner: etcd 
+    group: etcd
+
+- name: distribute certs for etcd
+  shell: "ls {{ local_cert_dir }}/etcd && \
+          cp {{ local_cert_dir }}/etcd/{ca,server,peer,client}*.pem {{ etcd_cert_dir }}/ -f"
+
+- name: chown etcd certs
+  file: 
+    path: "{{ etcd_cert_dir }}/{{ item }}"
+    owner: etcd 
+    group: root
+  with_items:
+    - "ca.pem"
+    - "ca-key.pem"
+    - "client.pem"
+    - "client-key.pem"
+    - "peer.pem"
+    - "peer-key.pem"
+    - "server.pem"
+    - "server-key.pem"
