@@ -1,0 +1,25 @@
+---
+- name: create kube cert dir
+  file: 
+    path: "{{ item }}" 
+    recurse: yes 
+    state: directory
+  with_items:
+    - "{{ kube_config_dir }}/pki"
+    - "{{ etcd_cert_dir }}"
+
+- name: distribute apiserver certs for kubernetes_master
+  shell: "ls {{ local_cert_dir }}/kubernetes_master/ && \
+          cp {{ local_cert_dir }}/kubernetes_master/apiserver*.pem {{ kube_config_dir }}/pki/ -f"
+
+- name: distribute ca certs
+  shell: "ls {{ local_cert_dir }} && \
+          cp {{ local_cert_dir }}/{ca,admin,kubelet-client}*.pem {{ kube_config_dir }}/pki/ -f"
+
+- name: distribute node certs for kubernetes_master
+  shell: "ls {{ local_cert_dir }}/kubernetes_node && \
+          cp {{ local_cert_dir }}/kubernetes_node/{{ inventory_hostname }}/{node,kubelet-server}*.pem {{ kube_config_dir }}/pki -f"
+
+- name: chown certs
+  shell: "chmod 0644 {{ kube_config_dir }}/pki/* && \
+          chmod 0600 {{ kube_config_dir }}/pki/*key.pem"
