@@ -66,8 +66,7 @@
         name: tools
         tasks_from: create_distribution_ssh_key.yaml
 
-    - name: create and distribute cert files
-      include_role:
-        name: tools
-        tasks_from: create_distribution_cert.yaml
-      # when: inventory_hostname in groups['nodes']
+#     - name: create and distribute cert files
+#       include_role:
+#         name: tools
+#         tasks_from: create_distribution_cert.yaml
