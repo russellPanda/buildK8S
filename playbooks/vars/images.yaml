@@ -1,0 +1,18 @@
+---
+kube_pause_image: "{{ base_image_url }}/kubernetes/pause"
+kube_pause_image_tag: "3.2"
+
+
+kube_apiserver_image: "{{ base_image_url }}/kubernetes/kube-apiserver"
+kube_apiserver_image_tag: "v{{ kubernetes_version }}"
+
+
+kube_controller_image: "{{ base_image_url }}/kubernetes/kube-controller-manager"
+kube_controller_image_tag: "v{{ kubernetes_version }}"
+
+kube_scheduler_image: "{{ base_image_url }}/kubernetes/kube-scheduler"
+
+kube_scheduler_image_tag: "v{{ kubernetes_version }}"
+
+kubelet_image: "{{ base_image_url }}/kubernetes/kubelet"
+kubelet_image_tag: "v{{ kubernetes_version }}"

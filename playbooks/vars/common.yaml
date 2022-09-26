@@ -1,44 +1,53 @@
-# docker
-docker_config_dir: "/etc/docker"
-insecure_registries: '{{ ["192.168.2.229:40043"]}}'
-ip_mod_version: "ipv4" # ipv6
-docker_default_network: "172.32.0.1/16"
-docker_ipv6_default_network: "2001:470:19:fea::/64"
+# ansible task
+retries: 10
+delay: 10
 
 # os
 os_distribution: "CentOS"
 os_version: "7"
 host_architecture: "amd64"
 
-# ansible task
-retries: 10
-delay: 10
+# registry
+
+base_image_url: "192.168.2.228:40443"
 
 # yum
 yum_repo_bak_path: "/etc/yum.repos.d/repo.bak"
 repo_name: "project"
-yum_repo: "http://deploy.bocloud.k8s:40080/"
-deploy_host: "192.168.2.229"
+yum_repo: "http://192.168.2.228:40080/"
+deploy_host: "192.168.2.228"
+
+# cfssl
+
+cfssl_version: "1.5.0"
+cfssljson_version: "1.5.0"
+
+# cert
+
+ca_expiry: "876000h"
+# users
+users: {
+  "apiserver": {"name":"apiserver", "group":"system:masters"},
+  "kube-node": {"name":"system:node", "group":"system:nodes"},
+  "admin": {"name":"admin", "group":"system:masters"}
+}
 
 
-# registry
 
-base_image_url: "192.168.2.229:40043"
 
-# dir
+# docker
+docker_config_dir: "/etc/docker"
+insecure_registries: '{{ ["192.168.2.228:40443"]}}'
+ip_mod_version: "ipv4" # ipv6
+docker_default_network: "172.32.0.1/16"
+docker_ipv6_default_network: "2001:470:19:fea::/64"
+
 
 # manifest_dir: "/etc/kubernetes/manifests"
 local_cert_dir: "/opt/.cert"
 kube_config_dir: "/etc/kubernetes"
 # kube_addon_dir: "{{ kube_config_dir}}/addon"
 kube_cert_dir: "{{ kube_config_dir }}/pki"
-
-
-
-# cfssl
-
-cfssl_version: "1.5.0"
-cfssljson_version: "1.5.0"
 
 # kubelet
 manifest_dir: "/etc/kubernetes/manifests"
@@ -47,6 +56,9 @@ kube_addon_dir: "/etc/kubernetes/addon"
 # apiserver
 apiserver_dest_port: 6443
 apiserver_src_port: 6443
+service_ip_range: "100.64.0.0/16"
+auth_mode: "Node,RBAC"
+etcd_peer_url_scheme: https
 
 # etcd
 etcd_image: "{{ base_image_url }}/etcd/etcd"
@@ -56,6 +68,9 @@ etcdctl_version: "3.4.3"
 etcd_bin_dir: "/usr/bin"
 etcd_data_dir: "/var/lib/etcd"
 etcd_cert_dir: "/etc/etcd/ssl"
+etcd_initial_cluster_token: "etcd-k8s-cluster"
+
+
 
 # etcd backup
 etcd_backup_image: "{{ base_image_url }}/etcd/etcd-backup"
@@ -71,20 +86,10 @@ keepalived_advert_int: 1
 keepalived_config_dir: "/etc/keepalived"
 master_vip: "192.168.2.220"
 
-
-# cert
-
-ca_expiry: "876000h"
-
-
-
-# users
-users: {
-  "apiserver": {"name":"apiserver", "group":"system:masters"},
-  "kube-node": {"name":"system:node", "group":"system:nodes"},
-  "admin": {"name":"admin", "group":"system:masters"}
-}
-
 # kubernetes
 
 kubernetes_service_ip: "100.64.0.1"
+kubernetes_version: "1.21.1"
+
+dns_ip: "{{ DNS_IP | default('100.64.0.10') }}"
+dns_ipv6: "{{ DNS_IPV6 | default('fd80::10') }}"
