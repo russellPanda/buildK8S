@@ -1,21 +1,3 @@
-# ---
-# - name: gather_facts
-#   max_fail_percentage: 0
-#   hosts: all:127.0.0.1
-#   tasks:
-#     - name: check all hosts are reacheable
-#       assert:
-#         that:
-#           - ansible_play_hosts == (groups['all'] + ['127.0.0.1'])
-#         fail_msg: 1 or more host is UNREACHABLE
-#         success_msg: ALL hosts are REACHABLE
-#       run_once: yes
-#     - include_vars:
-#         file: ../vars/common.yaml
-#     - include_vars:
-#         file: ../vars/images.yaml
-#     - set_fact:
-#         action: deploy
 ---
 - name: deploy
   hosts: nodes
@@ -26,32 +8,12 @@
     - include_vars:
         file: "{{ item }}"
       with_items:
-        - "../vars/common.yaml"
-        - "../vars/images.yaml"
+        - "common.yaml"
+        - "images.yaml"
     - set_fact:
-        action: deploy
+        action: "deploy"
+    - name: environment
+      include_role: name=environment
 
-    - name: hostname
-      shell: hostname
-      register: node_hostname_cmd
-
-    - name: register hostname
-      set_fact:
-        node_hostname: "{{ node_hostname_cmd.stdout }}"
-    #add_etc_hosts
-    - name: update etc hosts >
-      include_role:
-        name: tools
-        tasks_from: add_etc_hosts.yaml
-
-
-    - name: distribution of certificate
-      include_role:
-        name: tools
-        tasks_from: create_distribution_cert.yaml
-
-
-
-    # - name: deploy k8s node
-    #   include_role:
-    #     name: kubelet_service
+    - name: deploy k8s cluster
+      include_role: name=k8s_core
