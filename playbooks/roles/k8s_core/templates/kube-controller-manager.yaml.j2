@@ -38,11 +38,6 @@ spec:
         - '--terminated-pod-gc-threshold=2000'
         - '--profiling=false'
         - '--use-service-account-credentials=true'
-        {% if fabric_mode != 'underlay' -%}
-        - '--allocate-node-cidrs=true'
-        - '--cluster-cidr={{ cluster_cidr_map[ip_mod_version] }}'
-        {%- endif %}
-
       resources:
         requests:
           cpu: 200m
