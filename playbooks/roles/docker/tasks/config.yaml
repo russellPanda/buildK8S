@@ -8,4 +8,10 @@
   template:
     src: "daemon.json.j2"
     dest: "{{ docker_config_dir }}/daemon.json"
-  notify: restart docker service
+
+- name: restart docker service
+  systemd:
+    name: docker
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
