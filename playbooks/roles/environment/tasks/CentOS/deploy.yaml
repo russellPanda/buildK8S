@@ -41,6 +41,13 @@
         group: "root"
         mode: 0755
 
+- name: disable selinux
+  selinux: state=disabled
+
+- name: stop and disable firewalld
+  service: name=firewalld enabled=no state=stopped
+  ignore_errors: True
+
 # yum repo
 - block:
     - name: create yum repo
