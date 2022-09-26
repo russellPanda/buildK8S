@@ -1,5 +1,5 @@
 ---
-# todo user and group
+# 
 - name: "{{ ansible_user }} group name"
   shell: id -ng {{ ansible_user }}
   register: user_group
@@ -20,7 +20,7 @@
     - "{{ ansible_env.HOME }}/.ssh/id_rsa.pub"
   register: rsa_stats
 
-# todo 文件存在 即判断密钥完整
+# 文件存在 即判断密钥完整
 
 - name: ssh-keygen create rsa and pub
   shell: >
