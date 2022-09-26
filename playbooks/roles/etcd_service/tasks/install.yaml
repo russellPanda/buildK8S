@@ -48,7 +48,7 @@
   include_tasks: set_cert.yaml
 
 - name: create etcd manifest yaml file
-  tempfile:
+  template:
     src: "etcd.yaml.j2"
     dest: "{{ manifest_dir }}/etcd.yaml"
     mode: 0644
