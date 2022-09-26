@@ -44,11 +44,11 @@
     group: etcd
     mode: 0755
 
-# todo 分发证书, tools
-
+- name: config certs
+  include_tasks: set_cert.yaml
 
 - name: create etcd manifest yaml file
-  tempfile:
+  template:
     src: "etcd.yaml.j2"
     dest: "{{ manifest_dir }}/etcd.yaml"
     mode: 0644

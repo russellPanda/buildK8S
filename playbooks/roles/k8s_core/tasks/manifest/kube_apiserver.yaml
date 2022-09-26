@@ -1,0 +1,11 @@
+---
+- name: create audit-policy file
+  copy: 
+    src: "audit-policy.yaml"
+    dest: "{{ kube_config_dir }}/audit-policy.yaml"
+
+- name: create kube-apiserver manifest yaml
+  template: 
+    src: "kube-apiserver.yaml.j2" 
+    dest: "{{ manifest_dir }}/kube-apiserver.yaml"
+    mode: 0644

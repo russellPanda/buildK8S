@@ -1,2 +1,15 @@
 ---
 # tasks file for k8s_core
+
+- name: create and distribute cert files
+  include_role:
+    name: tools
+    tasks_from: create_distribution_cert.yaml
+
+- name: deploy k8s master node
+  include_tasks: master.yaml
+  when: inventory_hostname in (groups['kubernetes_master']| default([]))
+
+- name: deploy k8s worker node
+  include_tasks: node.yaml
+  when: inventory_hostname in (groups['kubernetes_worker']| default([]))  
