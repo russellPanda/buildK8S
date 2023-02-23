@@ -1,0 +1,4 @@
+[node]
+192.168.2.221 ansible_ssh_pass="Beyond#11" ansible_user="root" ansible_ssh_port=22
+192.168.2.223 ansible_ssh_pass="Beyond#11" ansible_user="root" ansible_ssh_port=22
+192.168.2.224 ansible_ssh_pass="Beyond#11" ansible_user="root" ansible_ssh_port=22

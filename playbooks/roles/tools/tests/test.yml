@@ -1,0 +1,6 @@
+---
+- name: gather_facts
+  max_fail_percentage: 0
+  hosts: all:127.0.0.1
+  tasks:
+    - include_tasks: check_reacheable.yaml

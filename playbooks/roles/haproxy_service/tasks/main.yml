@@ -1,0 +1,31 @@
+---
+# tasks file for haproxy_service
+- name: create haproxy directory
+  file:
+    name: "{{ haproxy_config_dir }}"
+    state: directory
+    recurse: yes
+
+- name: create kubelet manifest directory
+  file:
+    path: "{{ manifest_dir }}"
+    state: directory
+    recurse: yes
+
+- name: create haproxy config file
+  template: 
+    src: "haproxy.cfg.j2" 
+    dest: "{{ haproxy_config_dir }}/haproxy.cfg"
+    mode: 0755
+  register: config_file_status
+
+- name: try to restart haproxy when config file is changed
+  shell: "docker restart $(docker ps |grep haproxy | grep -v pause | awk '{print $1}')"
+  ignore_errors: true
+  when: config_file_status is changed
+
+- name: create haproxy service manifest yaml
+  template: 
+    src: "haproxy.yaml.j2"
+    dest: "{{ manifest_dir }}/haproxy.yaml"
+    mode: 0644

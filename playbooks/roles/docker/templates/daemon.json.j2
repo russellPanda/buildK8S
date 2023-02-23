@@ -1,0 +1,14 @@
+{
+  "insecure-registries": [{% for registry in insecure_registries %}"{{ registry }}"{% if not loop.last %},{% endif %}{% endfor %}],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+{% if ip_mod_version == "ipv4" %}
+  "bip": "{{ docker_default_network }}",
+{% elif ip_mod_version == "ipv6" %}
+  "ipv6": true,
+  "fixed-cidr-v6": "{{ docker_ipv6_default_network }}",
+{% endif %}
+  "exec-opts": ["native.cgroupdriver=systemd"]
+}

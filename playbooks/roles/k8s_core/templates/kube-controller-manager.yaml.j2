@@ -1,0 +1,63 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+  labels:
+    component: kube-controller-manager
+    tier: control-plane
+spec:
+  volumes:
+    - name: pki
+      hostPath:
+        path: /etc/kubernetes
+    - name: localtime
+      hostPath:
+        path: /etc/localtime
+  containers:
+    - name: kube-controller-manager
+      image: {{ kube_controller_image }}:{{ kube_controller_image_tag }}
+      command:
+        - /usr/local/bin/kube-controller-manager
+        - '--v=0'
+        {% if ip_mod_version == "ipv4" -%}
+        - '--address=0.0.0.0'
+        - '--master=https://{{ inventory_hostname }}:{{ apiserver_src_port }}'
+        {% elif ip_mod_version == "ipv6" -%}
+        - '--address=::'
+        - '--master=https://[{{ inventory_hostname }}]:{{ apiserver_src_port }}'
+        {% endif -%}
+        - '--leader-elect=true'
+        - '--cluster-name=kubernetes'
+        - '--kubeconfig={{ kube_config_dir }}/kubeconfig'
+        - '--root-ca-file={{ kube_config_dir }}/pki/ca.pem'
+        - '--service-account-private-key-file={{ kube_config_dir }}/pki/ca-key.pem'
+        - '--cluster-signing-cert-file={{ kube_config_dir }}/pki/ca.pem'
+        - '--cluster-signing-key-file={{ kube_config_dir }}/pki/ca-key.pem'
+        - '--horizontal-pod-autoscaler-use-rest-clients=true'
+        - '--terminated-pod-gc-threshold=2000'
+        - '--profiling=false'
+        - '--use-service-account-credentials=true'
+      resources:
+        requests:
+          cpu: 200m
+      volumeMounts:
+        - name: pki
+          readOnly: true
+          mountPath: /etc/kubernetes/
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 10252
+          {% if ip_mod_version == "ipv4" -%}
+          host: 127.0.0.1
+          {% elif ip_mod_version == "ipv6" -%}
+          host: ::1
+          {%- endif %}
+
+        initialDelaySeconds: 15
+        timeoutSeconds: 15
+  hostNetwork: true

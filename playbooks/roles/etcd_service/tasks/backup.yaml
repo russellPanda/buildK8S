@@ -1,0 +1,48 @@
+---
+- name: create kube addon directory
+  file:
+    name: "{{ kube_addon_dir }}"
+    state: directory
+    mode: 0755
+
+- name: create etcd addon directory
+  file:
+    name: "{{ kube_addon_dir }}/kube_etcd"
+    state: directory
+    mode: 0755
+
+- name: create etcd data backup directory
+  file:
+    name: "{{ kube_addon_dir }}/kube_etcd_backup"
+    state: directory
+    mode: 0755
+
+
+- name: rely on etcd service and secret
+  include_tasks: "{{ item }}"
+  with_items:
+    - "service.yaml"
+    - "secret.yaml"
+
+- name: create backup cron job yaml
+  template:
+    src: "backup_cron_job.yaml.j2"
+    dest: "{{ kube_addon_dir }}/backup_cron_job.yaml"
+    mode: 0755
+
+
+- block:
+  - name: kubectl create etcd backup cron job yaml
+    shell: "kubectl apply -f {{ kube_addon_dir }}/backup_cron_job.yaml"
+    register: result
+    until: result.rc == 0
+    retries: "{{ retries }}"
+    delay: "{{ delay }}"
+
+  - name: check etcd secrets
+    shell: "kubectl get secrets --all-namespaces | grep etcd-backup-secrets"
+    register: result
+    until: result.rc == 0
+    retries: "{{ retries }}"
+    delay: "{{ delay }}"  
+  run_once: true

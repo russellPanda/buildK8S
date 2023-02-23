@@ -1,0 +1,35 @@
+vrrp_script chk_apiserver {
+   script "/usr/local/etc/keepalived/check_master.sh"
+   interval 2
+   weight -{{ (groups['kubernetes_master'] | length) * 10 }}
+}
+
+
+{# todo 使用导入j2文件的模式 #}
+{# 考虑后续加入其他的配置 #}
+vrrp_instance VI_1 {
+{% if inventory_hostname == groups['kubernetes_master'][0] -%}
+    state MASTER
+    priority 100
+{% else -%}
+      {% for node in groups['kubernetes_master'] %}
+        {% if inventory_hostname == node %}
+    state BACKUP
+    priority {{ 110 - 10 * loop.index }}
+        {% endif %}
+    {% endfor %}
+{% endif -%}
+    interface {{ interface }}
+    virtual_router_id {{ keepalived_virtual_router_id }}
+    advert_int {{ keepalived_advert_int }}
+    authentication {
+        auth_type PASS
+        auth_pass {{ keepalived_auth_pass }}
+    }
+    virtual_ipaddress {
+        {{vip}}
+    }
+    track_script {
+        chk_apiserver
+    }
+}

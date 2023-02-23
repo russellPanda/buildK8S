@@ -1,0 +1,17 @@
+---
+# tasks file for containerd
+- name: check containerd service
+  shell: "systemctl status containerd | grep Active"
+  register: is_install
+  ignore_errors: true
+
+# todo: 命令行判断service是否running
+- name: install containerd service
+  include_tasks: install.yaml
+  when: is_install.stdout | regex_search('running') != 'running' 
+
+- name: restart containerd service
+  service:
+    name: containerd
+    state: restarted
+    

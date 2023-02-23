@@ -1,0 +1,24 @@
+---
+
+- name: create json file if not exists
+  copy: 
+    content: "{}" 
+    dest: "{{ json_path }}" 
+    force: false
+
+- name: read json file {{ json_path }}
+  slurp:
+    src: "{{ json_path }}"
+  register: json_file
+
+- name: append key/value
+  set_fact:
+    json_content: "{{ json_file.content|b64decode|from_json | default([]) | combine(json_var) }}"
+
+- name: write json file {{ json_path }}
+  copy:
+    content: "{{ json_content | to_nice_json }}"
+    dest: "{{ json_path }}"
+  register: json_file_state
+
+

@@ -1,0 +1,57 @@
+---
+- name: create directory on kubernetes node
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ kube_config_dir }}"
+    - "{{ manifest_dir }}"
+    - "/var/lib/kubelet"
+
+- name: install kubectl
+  yum:
+    name: kubectl-{{ kubernetes_version }}
+    state: latest
+
+- name: create kube config
+  include_tasks: kubeconfig.yaml
+
+- name: install kubelet
+  include_tasks: kubelet.yaml
+
+# certs
+- name: config master certs files
+  include_tasks: cert/master_cert.yaml
+
+# admin.conf
+- name: create admin.conf
+  include_tasks: admin_conf.yaml
+
+# manifest yaml
+
+- name: create apiserver static pod
+  include_tasks: manifest/kube_apiserver.yaml
+
+- name: create kube_controller_manager static pod
+  include_tasks: manifest/kube_controller_manager.yaml
+  
+- name: create kube_scheduler static pod
+  include_tasks: manifest/kube_scheduler.yaml
+
+# todo install ha and keepalived
+
+- name: install etcd service
+  include_role:
+    name: etcd_service
+  when: inventory_hostname in groups['etcd']
+
+
+# check
+
+- name: check k8s cluster init status
+  shell: "kubectl get nodes |egrep ^{{ node_hostname }}"
+  register: result 
+  until: result.rc == 0 
+  retries: "{{ retries }}"
+  delay: "{{ delay }}"

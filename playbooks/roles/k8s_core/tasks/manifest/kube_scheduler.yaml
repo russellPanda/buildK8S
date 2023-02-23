@@ -1,0 +1,6 @@
+---
+- name: create kube-scheduler manifest yaml
+  template: 
+    src: "kube-scheduler.yaml.j2"
+    dest: "{{ manifest_dir }}/kube-scheduler.yaml"
+    mode: 0644

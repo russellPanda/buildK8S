@@ -1,0 +1,59 @@
+---
+
+- name: create etcd group
+  group:
+    name: etcd
+    state: present
+
+- name: create etcd user
+  user:
+    name: etcd
+    comment: "etcd user"
+    shell: "/sbin/nologin"
+    state: present
+    system: yes
+    home: "{{ etcd_data_dir }}"
+    groups: etcd
+
+- name: create etcd cert directory
+  file:
+    path: "{{ etcd_cert_dir }}"
+    state: directory
+    owner: etcd
+    group: etcd
+
+- name: create kubelet manifest directory
+  file:
+    path: "{{ manifest_dir }}"
+    state: directory
+    recurse: yes
+
+- name: create etcd data directory
+  file:
+    path: "{{ etcd_data_dir }}"
+    state: directory
+    owner: etcd
+    group: etcd
+    mode: 700
+
+- name: download etcdctl binary
+  get_url:
+    url: "{{ yum_repo }}/files/etcdctl-{{ etcdctl_version }}-{{ host_architecture }}"
+    dest: "{{ etcd_bin_dir }}/etcdctl"
+    owner: etcd
+    group: etcd
+    mode: 0755
+
+- name: config certs
+  include_tasks: set_cert.yaml
+
+- name: create etcd manifest yaml file
+  template:
+    src: "etcd.yaml.j2"
+    dest: "{{ manifest_dir }}/etcd.yaml"
+    mode: 0644
+
+
+# todo 扩展etcd
+
+

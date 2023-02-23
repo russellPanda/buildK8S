@@ -1,0 +1,14 @@
+---
+- name: create kube cert dir
+  file: 
+    path: "{{ kube_config_dir }}/pki" 
+    recurse: yes 
+    state: directory
+
+- name: distribute ca certs for kubernetes_node
+  shell: "ls {{ local_cert_dir }} && 
+          cp {{ local_cert_dir }}/{ca,admin,}*.pem {{ kube_config_dir }}/pki -f"
+
+- name: distribute node certs for kubernetes_node
+  shell: "ls {{ local_cert_dir }}/kubernetes_node && \
+          cp {{ local_cert_dir }}/kubernetes_node/{{ inventory_hostname }}/{node,kubelet-server}*.pem {{ kube_config_dir }}/pki -f"

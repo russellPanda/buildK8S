@@ -1,0 +1,310 @@
+---
+- name: install cfssl
+  get_url:
+    url: "{{ yum_repo }}/files/cfssl-{{ cfssl_version }}-{{ host_architecture }}"
+    dest: "/usr/bin/cfssl"
+    mode: 0755
+    force: yes
+
+- name: install cfssjson
+  get_url:
+    url: "{{ yum_repo }}/files/cfssljson-{{ cfssljson_version }}-{{ host_architecture }}"
+    dest: "/usr/bin/cfssljson"
+    mode: 0755
+    force: yes
+
+# todo 当前只考虑部署的情况
+
+# 证书文件夹必须清空()
+# - name: checking cert dir
+#   stat:
+#     path: "{{ local_cert_dir }}"
+#   register: cert_dir_stat
+#   failed_when: not (cert_dir_stat.stat.exists and cert_dir_stat.stat.isdir)
+
+- name: create cert directory
+  file:
+    name: "{{ local_cert_dir }}{{ item }}"
+    state: directory
+  with_items:
+    - "/"
+    - "/etcd/"
+    - "/kubernetes_master/"
+    - "/kubernetes_node/"
+
+- block:
+    # 生成admin的证书
+    - block:
+        - name: admin and kubelet-client cert files stats
+          stat:
+            path: "{{ local_cert_dir }}/{{ item }}"
+          with_items:
+            - ca.pem
+            - ca-key.pem
+            - admin.pem
+            - admin-key.pem
+            - kubelet-client.pem
+            - kubelet-client-key.pem
+          register: ca_stats
+
+        - name: parse cert stats
+          set_fact:
+            ca_results: "{{ ca_stats | to_json | from_json | json_query(query_ca) }}"
+            admin_results: "{{ ca_stats | to_json | from_json | json_query(query_admin) }}"
+            kubelet_client_results: "{{ ca_stats | to_json | from_json | json_query(query_kubelet_client) }}"
+            all_results: "{{ ca_stats | to_json | from_json | json_query(query_all) }}"
+          vars:
+            query_ca: "results[?item.contains(@, 'ca')].stat.exists"
+            query_all: "results[*].stat.exists"
+            query_admin: "results[?item.contains(@, 'admin')].stat.exists"
+            query_kubelet_client: "results[?item.contains(@, 'kubelet-client')].stat.exists"
+
+        - name: create ca config file
+          template:
+            src: "{{ item }}.j2"
+            dest: "{{ local_cert_dir }}/{{ item }}"
+            mode: 0755
+          when: false in all_results
+          with_items:
+            - "ca-config.json"
+            - "ca-csr.json"
+            - "admin-csr.json"
+            - "kubelet-client-csr.json"
+
+        - name: create ca certs
+          shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
+          args:
+            chdir: "{{ local_cert_dir }}"
+          when: false in ca_results
+
+        - name: create admin cert
+          shell: "cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=kubernetes admin-csr.json | cfssljson -bare admin"
+          args:
+            chdir: "{{ local_cert_dir }}"
+          when: false in admin_results
+
+        - name: create kubelet-client cert
+          shell: "cd {{ local_cert_dir }}  && cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=kubernetes kubelet-client-csr.json | cfssljson -bare kubelet-client"
+          args:
+            chdir: "{{ local_cert_dir }}"
+          when: false in kubelet_client_results
+
+    # 生成etcd的证书
+    - block:
+        - name: register etcd certs stats
+          stat:
+            path: "{{ local_cert_dir }}/etcd/{{ item }}"
+          with_items:
+            - ca.pem
+            - ca-key.pem
+            - peer.pem
+            - peer-key.pem
+            - client.pem
+            - client-key.pem
+            - server.pem
+            - server-key.pem
+          register: etcd_stats
+
+        - name: parse etcd cert stats
+          set_fact:
+            etcd_ca_results: "{{ etcd_stats | to_json | from_json | json_query(query_ca) }}"
+            peer_results: "{{ etcd_stats | to_json | from_json | json_query(query_peer) }}"
+            server_results: "{{ etcd_stats | to_json | from_json | json_query(query_server) }}"
+            client_results: "{{ etcd_stats | to_json | from_json | json_query(query_client) }}"
+            all_results: "{{ etcd_stats | to_json | from_json | json_query(query_all) }}"
+          vars:
+            query_ca: "results[?item.contains(@, 'ca')].stat.exists"
+            query_peer: "results[?item.contains(@, 'peer')].stat.exists"
+            query_server: "results[?item.contains(@, 'server')].stat.exists"
+            query_client: "results[?item.contains(@, 'client')].stat.exists"
+            query_all: "results[*].stat.exists"
+
+        - name: create etcd config file
+          template:
+            src: "etcd_{{ item }}.j2"
+            dest: "{{ local_cert_dir }}/etcd/{{ item }}"
+            mode: 0755
+          with_items:
+            - "ca-config.json"
+            - "ca-csr.json"
+            - "peer-csr.json"
+            - "client-csr.json"
+            - "server-csr.json"
+          when: false in all_results or etcd_flush | default(false) == true
+
+        - name: create etcd ca
+          shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca -"
+          args:
+            chdir: "{{ local_cert_dir }}/etcd"
+          when: false in all_results or etcd_flush | default(false) == true
+
+        - name: create etcd server certs
+          shell: "cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=server server-csr.json | cfssljson -bare server"
+          args:
+            chdir: "{{ local_cert_dir }}/etcd"
+          when: false in server_results or etcd_flush | default(false) == true
+
+        - name: create etcd client certs
+          shell: "cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=client client-csr.json | cfssljson -bare client"
+          args:
+            chdir: "{{ local_cert_dir }}/etcd"
+          when: false in client_results
+
+        - name: create etcd peer certs
+          shell: "cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=peer peer-csr.json | cfssljson -bare peer"
+          args:
+            chdir: "{{ local_cert_dir }}/etcd"
+          when: false in peer_results or etcd_flush | default(false) == true
+
+    # 创建apiserver证书
+    - block:
+        - name: register apiserver certs
+          stat:
+            path: "{{ local_cert_dir }}/kubernetes_master/apiserver.pem"
+          with_items:
+            - apiserver.pem
+            - apiserver-key.pem
+          register: apiserver_stats
+
+        - name: create apiserver csr
+          template:
+            src: "apiserver-csr.json.j2"
+            dest: "{{ local_cert_dir }}/kubernetes_master/apiserver-csr.json"
+            mode: 0755
+          when: false in apiserver_stats | json_query('results[*].stat.exists') or master_flush | default(false) == true
+
+        - name: create apiserver cert
+          shell: "cfssl gencert \
+            -ca={{ local_cert_dir }}/ca.pem \
+            -ca-key={{ local_cert_dir }}/ca-key.pem \
+            -config={{ local_cert_dir }}/ca-config.json \
+            -profile=kubernetes apiserver-csr.json | cfssljson -bare apiserver"
+          args:
+            chdir: "{{ local_cert_dir }}/kubernetes_master"
+          when: false in apiserver_stats | json_query('results[*].stat.exists') or master_flush | default(false) == true
+
+    # 创建node节点证书
+    - block:
+        - name: register node certs stats
+          stat:
+            path: "{{ local_cert_dir }}/{{ item[0] }}/{{ item[1] }}"
+          with_nested:
+            - "{{ (groups['kubernetes_node'] + groups['kubernetes_master']) | unique }}"
+            - ["node-key.pem", "node.pem"]
+          register: node_stats
+
+        - name: create cert dir for kubernetes_node
+          file:
+            name: "{{ local_cert_dir }}/kubernetes_node/{{ item }}"
+            state: directory
+            recurse: true
+          with_items: "{{ (groups['kubernetes_node'] + groups['kubernetes_master']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+
+        - name: create node csr
+          template:
+            src: "node-csr.json.j2"
+            dest: "{{ local_cert_dir }}/kubernetes_node/{{ item }}/node-csr.json"
+            mode: 0755
+          vars:
+            host_ip: "{{ item }}"
+          with_items: "{{ (groups['kubernetes_node'] + groups['kubernetes_master']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+
+        - name: create node cert
+          shell: "cfssl gencert \
+            -ca={{ local_cert_dir }}/ca.pem \
+            -ca-key={{ local_cert_dir }}/ca-key.pem \
+            -config={{ local_cert_dir }}/ca-config.json \
+            -profile=kubernetes node-csr.json | cfssljson -bare node"
+          args:
+            chdir: "{{ local_cert_dir }}/kubernetes_node/{{ item }}"
+          with_items: "{{ (groups['kubernetes_node'] + groups['kubernetes_master']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+
+        #
+        - name: register kubelet-server certs stats
+          stat:
+            path: "{{ local_cert_dir }}/{{ item[0] }}/{{ item[1] }}"
+          with_nested:
+            - "{{ (groups['kubernetes_master'] + groups['kubernetes_node']) | unique }}"
+            - ["kubelet-server.pem", "kubelet-server.pem"]
+          register: node_stats
+
+        - name: create cert dir for kubelet-server
+          file:
+            name: "{{ local_cert_dir }}/kubernetes_node/{{ item }}"
+            state: directory
+            recurse: true
+          with_items: "{{ (groups['kubernetes_master'] + groups['kubernetes_node']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+
+        - name: create kubelet-server csr
+          template:
+            src: "node-csr.json.j2"
+            dest: "{{ local_cert_dir }}/kubernetes_node/{{ item }}/kubelet-server-csr.json"
+            mode: 0755
+          vars:
+            host_ip: "{{ item }}"
+          with_items: "{{ (groups['kubernetes_master'] + groups['kubernetes_node']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+
+        - name: create kubelet-server cert
+          shell: "cfssl gencert \
+            -ca={{ local_cert_dir }}/ca.pem \
+            -ca-key={{ local_cert_dir }}/ca-key.pem \
+            -config={{ local_cert_dir }}/ca-config.json \
+            -profile=kubernetes kubelet-server-csr.json | cfssljson -bare kubelet-server"
+          args:
+            chdir: "{{ local_cert_dir }}/kubernetes_node/{{ item }}"
+          with_items: "{{ (groups['kubernetes_master'] + groups['kubernetes_node']) | unique }}"
+          when: false in node_stats | json_query('results[*].stat.exists')
+  when: inventory_hostname == groups["kubernetes_master"] |first
+
+# 分发证书
+- block:
+    - name: archive certs
+      archive:
+        path: "{{ local_cert_dir }}"
+        dest: "{{local_cert_dir}}.tar.gz"
+      when: inventory_hostname == groups["kubernetes_master"] | first
+
+    - name: copy package file to local
+      fetch:
+        src: "{{ local_cert_dir }}.tar.gz"
+        dest: "/tmp/certs.tar.gz"
+        flat: yes
+      when: inventory_hostname == groups["kubernetes_master"] | first
+
+    - name: distributed package to other node
+      copy:
+        src: "/tmp/certs.tar.gz"
+        dest: "/tmp/certs.tar.gz"
+        mode: 0755
+      when: inventory_hostname != groups["kubernetes_master"] | first
+
+    - name: unarchive cert package file
+      unarchive:
+        src: "/tmp/certs.tar.gz"
+        dest: "/opt"
+      when: inventory_hostname != groups["kubernetes_master"] | first

@@ -1,0 +1,4 @@
+---
+# vars file for haproxy_service
+haproxy_image: ""
+haproxy_image_tag: ""

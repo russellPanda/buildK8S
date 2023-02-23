@@ -1,0 +1,8 @@
+---
+# vars file for docker
+
+docker_config_dir: "/etc/docker"
+insecure_registries: '{{ ["192.168.2.229:40043"]}}'
+ip_mod_version: "ipv4" # ipv6
+docker_default_network: "172.32.0.1/16"
+docker_ipv6_default_network: "2001:470:19:fea::/64"

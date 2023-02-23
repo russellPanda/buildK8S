@@ -1,0 +1,17 @@
+---
+- name: create docker config directory
+  file:
+    path: "{{ docker_config_dir }}"
+    state: directory
+
+- name: create docker daemon.json
+  template:
+    src: "daemon.json.j2"
+    dest: "{{ docker_config_dir }}/daemon.json"
+
+- name: restart docker service
+  systemd:
+    name: docker
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

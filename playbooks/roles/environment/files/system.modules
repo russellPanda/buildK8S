@@ -1,0 +1,31 @@
+#！/bin/sh
+/sbin/modinfo -F filename ip_vs > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe ip_vs
+fi
+
+/sbin/modinfo -F filename ip_vs_wrr > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe ip_vs_wrr
+fi
+
+/sbin/modinfo -F filename ip_vs_rr > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe ip_vs_rr
+fi
+
+/sbin/modinfo -F filename ip_vs_sh > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe ip_vs_sh
+fi
+
+
+/sbin/modinfo -F filename fuse > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe fuse
+fi
+
+/sbin/modinfo -F filename rbd > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    /sbin/modprobe rbd
+fi

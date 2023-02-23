@@ -1,0 +1,216 @@
+#!/bin/bash
+CONTAINER_NAME="kubelet"
+
+remove_kubelet(){
+    runtime=$1
+    if [ "$runtime" == "docker" ];then
+      docker rm -f kubelet &> /dev/null
+    else
+      nerdctl -n k8s.io rm -f kubelet &> /dev/null
+    fi
+}
+
+stop_kubelet(){
+    runtime=$1
+    if [ "$runtime" == "docker" ];then
+      docker stop kubelet &> /dev/null
+    else
+      nerdctl -n k8s.io stop kubelet &> /dev/null
+    fi
+}
+
+echo_usage(){
+  cat <<EOF
+USAGE: bash kubelet.sh COMMAND [args].
+EXAMPLE: bash kubelet.sh -a start -r docker
+COMMAND:
+  -a          action. could be "start", "stop", "remove", "status", "restart"
+  -r          runtime. could be "docker", "containerd"
+EOF
+}
+init(){
+  # 预生成一些目录
+  mkdir -p \
+  {{ etcd_cert_dir }} \
+  {{ etcd_data_dir}} \
+  {{ keepalived_config_dir }} \
+  {{ haproxy_config_dir }} \
+  /var/lib/calico \
+  /var/lib/lxc \
+  /opt/fabric \
+  /usr/libexec/kubernetes \
+  /var/lib/cni \
+  /var/log/pods \
+  /var/log/containers \
+  /etc/cni
+}
+start_kubelet_with_containerd(){
+  runtime="containerd"
+  remove_kubelet "containerd"
+  nerdctl -n k8s.io --insecure-registry  pull {{ kubelet_image }}:{{ kubelet_image_tag }}
+  nerdctl -n k8s.io run -d \
+  --name ${CONTAINER_NAME} --net=host --pid host --user=root  --privileged  --restart=always \
+  -v {{ etcd_cert_dir }}:{{ etcd_cert_dir }} \
+  -v {{ etcd_data_dir}}:{{ etcd_data_dir }} \
+  -v {{ kube_config_dir }}:{{ kube_config_dir }} \
+  -v /etc/localtime:/etc/localtime \
+  -v /etc/ssl/certs:/etc/ssl/certs \
+  -v /etc/sysconfig/network-scripts:/etc/sysconfig/network-scripts \
+  -v /etc/resolv.conf:/etc/resolv.conf \
+  -v /run:/run \
+  -v /var/run:/var/run:rw \
+  -v /proc:/proc \
+  -v /sys:/sys \
+  -v /dev:/dev \
+  -v /lib/modules:/lib/modules \
+  -v /usr/libexec/kubernetes:/usr/libexec/kubernetes \
+  -v /var/lib/kubelet:/var/lib/kubelet:shared \
+  -v /var/lib/calico:/var/lib/calico \
+  -v /var/lib/cni:/var/lib/cni \
+  -v /var/lib/lxc:/var/lib/lxc \
+  -v /var/log/pods:/var/log/pods \
+  -v /var/lib/containerd:/var/lib/containerd \
+  -v /var/log/containers:/var/log/containers \
+  -v /etc/cni:/etc/cni:rw \
+  {{ kubelet_image }}:{{ kubelet_image_tag }} kubelet \
+  --node-ip={{ inventory_hostname }} \
+  --pod-infra-container-image={{ kube_pause_image }}:{{ kube_pause_image_tag }}\
+  --kubeconfig={{ kube_config_dir }}//kubeconfig \
+  --config={{ kube_config_dir }}//kubeletconfig \
+  --v=0 \
+  --network-plugin=cni \
+  --cni-conf-dir=/etc/cni/net.d \
+  --cni-bin-dir=/opt/cni/bin \
+  --container-runtime=remote \
+  --container-runtime-endpoint=/var/run/containerd/containerd.sock \
+  --hostname-override={{ node_hostname }} \
+  --container-runtime=remote \
+  --runtime-request-timeout=15m \
+  --container-runtime-endpoint=unix:///run/containerd/containerd.sock --image-service-endpoint=unix:///run/containerd/containerd.sock
+}
+
+start_kubelet_with_docker(){
+    runtime="docker"
+    remove_kubelet $runtime
+    docker run -d \
+          --name ${CONTAINER_NAME} --net=host --pid host --user=root  --privileged  --restart=always \
+          -v {{ etcd_cert_dir }}:{{ etcd_cert_dir }} \
+          -v {{ etcd_data_dir}}:{{ etcd_data_dir }} \
+          -v {{ keepalived_config_dir }}:{{ keepalived_config_dir }} \
+          -v {{ haproxy_config_dir }}:{{ haproxy_config_dir }} \
+          -v {{ kube_config_dir }}:{{ kube_config_dir }} \
+          -v /etc/localtime:/etc/localtime \
+          -v /etc/ssl/certs:/etc/ssl/certs \
+          -v /etc/sysconfig/network-scripts:/etc/sysconfig/network-scripts \
+          -v /etc/resolv.conf:/etc/resolv.conf \
+          -v /run:/run \
+          -v /var/run:/var/run:rw \
+          -v /sys:/sys \
+          -v /proc:/proc \
+          -v /dev:/dev \
+          -v /lib/modules:/lib/modules \
+          -v /usr/libexec/kubernetes:/usr/libexec/kubernetes \
+          -v /var/lib/docker:/var/lib/docker:rw,rslave \
+          -v /var/lib/kubelet:/var/lib/kubelet:shared \
+          -v /var/lib/calico:/var/lib/calico \
+          -v /var/lib/cni:/var/lib/cni \
+          -v /var/lib/lxc:/var/lib/lxc \
+          -v /var/log/pods:/var/log/pods \
+          -v /var/log/containers:/var/log/containers \
+          -v /etc/cni:/etc/cni:rw \
+          -v /opt/cni:/opt/cni:rw \
+          -v /opt/fabric:/opt/fabric \
+          {{ kubelet_image }}:{{ kubelet_image_tag }} kubelet \
+          --node-ip={{ inventory_hostname }} \
+          --pod-infra-container-image={{ kube_pause_image }}:{{ kube_pause_image_tag }} \
+          --kubeconfig={{ kube_config_dir }}/kubeconfig \
+          --config={{ kube_config_dir }}/kubeletconfig \
+          --v=0 \
+          --network-plugin=cni \
+          --cni-conf-dir=/etc/cni/net.d \
+          --cni-bin-dir=/opt/cni/bin \
+          --hostname-override={{ node_hostname }}
+}
+
+start_kubelet(){
+  init
+  runtime=$1
+  if [ "$runtime" == "docker" ]; then
+    start_kubelet_with_docker
+  else
+    start_kubelet_with_containerd
+  fi
+}
+
+restart_kubelet(){
+    runtime=$1
+    remove_kubelet $runtime
+    start_kubelet $runtime
+}
+
+status_kubelet(){
+    runtime=$1
+    if [ "$runtime" == "docker" ]; then
+      state=$(docker ps -a | grep "${CONTAINER_NAME}" | egrep "Up [About]|[0-9]{1,}")
+      if [[ ${state} == "" ]];then
+          echo -e "\nError: ${CONTAINER_NAME} failed to start...\n"
+          exit 1
+      fi
+      echo -e "\n${CONTAINER_NAME} is up"
+    else
+      if [ $(nerdctl -n k8s.io ps -a | grep "${CONTAINER_NAME}"|grep -i up | wc -l) == "1" ]; then
+          echo -e "\n${CONTAINER_NAME} is up"
+      else
+          echo -e "\nError: ${CONTAINER_NAME} failed to start...\n"
+          exit 1
+      fi
+    fi
+}
+
+echo
+while getopts "a:r:h" opt
+do
+  case "$opt" in
+    a)
+        if [ "$OPTARG" != "start" ] && [ "$OPTARG" != "stop" ] && [ "$OPTARG" != "remove" ] && [ "$OPTARG" != "status" ] &&  [ "$OPTARG" != "restart" ]; then
+          echo "unexpected argments: $OPTARG"
+          echo "expect start or restart or stop or remove or status"
+          exit 1
+        fi
+        ACTION=$OPTARG
+        ;;
+    r)
+        echo $OPTARG
+        if [ "$OPTARG" != "docker" ] && [ "$OPTARG" != "containerd" ];then
+          echo "unexpected argments: $OPTARG"
+          echo "expect docker or containerd"
+          exit 1
+        fi
+        RUNTIME=$OPTARG
+        ;;
+    h)
+        echo_usage
+        ;;
+  esac
+done
+case "$ACTION" in
+    (start)
+        start_kubelet $RUNTIME
+        ;;
+    (stop)
+        stop_kubelet $RUNTIME
+        ;;
+    (remove)
+        remove_kubelet $RUNTIME
+        ;;
+    (status)
+        status_kubelet $RUNTIME
+        ;;
+    (restart)
+        restart_kubelet $RUNTIME
+        ;;
+    (*)
+        exit 1
+        ;;
+esac
+
